@@ -1,4 +1,3 @@
-from urllib import response
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -32,87 +31,201 @@ app.add_middleware(
 
 # https://fastapi.tiangolo.com/tutorial/sql-databases/#crud-utils
 
+# books
 @router_v1.get('/books')
 async def get_books(db: Session = Depends(get_db)):
     return db.query(models.Book).all()
 
-@router_v1.get('/books/{book_id}') # คือการสร้างเส้นทางที่ใช้สำหรับการดึงข้อมูลหนังสือ
+@router_v1.get('/books/{book_id}')
 async def get_book(book_id: int, db: Session = Depends(get_db)):
-    return db.query(models.Book).filter(models.Book.id == book_id).first() # คือการ query ข้อมูลจากฐานข้อมูลโดยใช้ id ของหนังสือ
+    return db.query(models.Book).filter(models.Book.id == book_id).first()
 
-@router_v1.post('/books') # คือการสร้างเส้นทางที่ใช้สำหรับการสร้างหนังสือ
+@router_v1.post('/books')
 async def create_book(book: dict, response: Response, db: Session = Depends(get_db)):
-    # TODO: Add validation
-    newbook = models.Book(title=book['title'], author=book['author'], year=book['year'], is_published=book['is_published'])
+    newbook = models.Book(title=book['title'], author=book['author'], year=book['year'], is_published=book['is_published'], detail=book['detail'], synopsis=book['synopsis'], category=book['category'])
     db.add(newbook)
     db.commit()
     db.refresh(newbook)
     response.status_code = 201
     return newbook
 
-# @router_v1.patch('/books/{book_id}')
-# async def update_book(book_id: int, book: dict, db: Session = Depends(get_db)):
-#     pass
+@router_v1.patch('/books/{book_id}')
+async def update_book(book_id: int, book: dict, db: Session = Depends(get_db)):
+    existing_book = db.query(models.Book).filter(models.Book.id == book_id).first()
+    if not existing_book:
+        return {
+        'message': 'Book not found'
+    }
+    if 'title' in book:
+        existing_book.title = book['title']
+    if 'author' in book:
+        existing_book.author = book['author']
+    if 'year' in book:
+        existing_book.year = book['year']
+    if 'is_published' in book:
+        existing_book.is_published = book['is_published']
+    if 'detail' in book:
+        existing_book.detail = book['detail']
+    if 'synopsis' in book:
+        existing_book.synopsis = book['synopsis']
+    if 'category' in book:
+        existing_book.category = book['category']
+    db.commit()
+    db.refresh(existing_book)
+    return existing_book
 
-# @router_v1.delete('/books/{book_id}')
-# async def delete_book(book_id: int, db: Session = Depends(get_db)):
-#     pass
+@router_v1.delete('/books/{book_id}')
+async def delete_book(book_id: int, db: Session = Depends(get_db)):
+    existing_book = db.query(models.Book).filter(models.Book.id == book_id).first()
+    if not existing_book:
+        return {
+        'message': 'Book not found'
+    }
+    db.delete(existing_book)
+    db.commit()
+    return {"detail": "Book deleted successfully"}
+
+#coffee
+@router_v1.get('/coffees')
+async def get_coffee(db: Session = Depends(get_db)):
+    return db.query(models.Coffee).all()
+
+@router_v1.get('/coffees/{coffee_id}')
+async def get_coffee(coffee_id: int, db: Session = Depends(get_db)):
+    return db.query(models.Coffee).filter(models.Coffee.id == coffee_id).first()
+
+@router_v1.post('/coffees')
+async def create_coffee(coffee: dict, response: Response, db: Session = Depends(get_db)):
+    new_coffee = models.Coffee(name=coffee['name'], description=coffee['description'], price=coffee['price'])
+    db.add(new_coffee)
+    db.commit()
+    db.refresh(new_coffee)
+    response.status_code = 201
+    return new_coffee
+
+@router_v1.patch('/coffees/{coffee_id}')
+async def update_coffee(coffee_id: int, coffee: dict, db: Session = Depends(get_db)):
+    existing_coffee = db.query(models.Coffee).filter(models.Coffee.id == coffee_id).first()
+    if not existing_coffee:
+        return {
+        'message': 'coffee not found'
+    }
+    if 'name' in coffee:
+        existing_coffee.name = coffee['name']
+    if 'description' in coffee:
+        existing_coffee.description = coffee['description']
+    if 'price' in coffee:
+        existing_coffee.price = coffee['price']
+    db.commit()
+    db.refresh(existing_coffee)
+    return existing_coffee
+
+@router_v1.delete('/coffees/{coffee_id}')
+async def delete_coffee(coffee_id: int, db: Session = Depends(get_db)):
+    existing_coffee = db.query(models.Coffee).filter(models.Coffee.id == coffee_id).first()
+    if not existing_coffee:
+        return {
+        'message': 'coffee not found'
+    }
+    db.delete(existing_coffee)
+    db.commit()
+    return {"detail": "coffee deleted successfully"}
+
+#orders
+@router_v1.get('/orders')
+async def get_orders(db: Session = Depends(get_db)):
+    return db.query(models.Order).all()
+
+@router_v1.get('/orders/{order_id}')
+async def get_order(order_id: int, db: Session = Depends(get_db)):
+    return db.query(models.Order).filter(models.Order.id == order_id).first()
+
+@router_v1.post('/orders')
+async def create_order(order: dict, response: Response, db: Session = Depends(get_db)):
+    new_order = models.Order(coffee_id=order['coffee_id'], quantity=order['quantity'], total_price=order['total_price'], notes=order['notes'])
+    db.add(new_order)
+    db.commit()
+    db.refresh(new_order)
+    response.status_code = 201
+    return new_order
+
+@router_v1.patch('/orders/{order_id}')
+async def update_order(response: Response ,order_id: int, order: dict, db: Session = Depends(get_db),):
+    db_order = db.query(models.Order).filter(models.Order.id == order_id).first()
+    if db_order:
+        for key, value in order.items():
+            setattr(db_order, key, value)
+        db.commit()
+        db.refresh(db_order)
+        return db_order
+    else:
+        return response.status_code == 404
+
+@router_v1.delete('/orders/{order_id}')
+async def delete_order(response: Response, order_id: int, db: Session = Depends(get_db)):
+    db_order = db.query(models.Order).filter(models.Order.id == order_id).first()
+    if db_order:
+        db.delete(db_order)
+        db.commit()
+        return {"message": "Order deleted successfully"}
+    else:
+        return response.status_code == 404
+
+# students
 @router_v1.get('/students')
 async def get_students(db: Session = Depends(get_db)):
     return db.query(models.Student).all()
 
-@router_v1.get('/students/{student_id}') # คือการสร้างเส้นทางที่ใช้สำหรับการดึงข้อมูลหนังสือ
+@router_v1.get('/students/{student_id}')
 async def get_student(student_id: int, db: Session = Depends(get_db)):
-    return db.query(models.Student).filter(models.Student.student_id == student_id).first() # คือการ query ข้อมูลจากฐานข้อมูลโดยใช้ id ของหนังสือ
+    return db.query(models.Student).filter(models.Student.id == student_id).first()
 
-@router_v1.post('/students') # คือการสร้างเส้นทางที่ใช้สำหรับการสร้างหนังสือ
+@router_v1.post('/students')
 async def create_student(student: dict, response: Response, db: Session = Depends(get_db)):
     # TODO: Add validation
-    newstudent = models.Student(student_id=student['student_id'], firstname=student['firstname'], lastname=student['lastname'], birth_day=student['birth_day'], age=student['age'], sex=student['sex'])
+    newstudent = models.Student(firstname=student['firstname'], lastname=student['lastname'], std_id=student['std_id'], birth=student['birth'], gender=student['gender'])
     db.add(newstudent)
     db.commit()
     db.refresh(newstudent)
     response.status_code = 201
     return newstudent
 
-@router_v1.put('/students/{student_id}')
-async def update_student(student_id: int, student: dict, response: Response, db: Session = Depends(get_db)):
-    db_student = db.query(models.Student).filter(models.Student.student_id == student_id).first()
-    if db_student:
-        db_student.firstname = student['firstname']
-        db_student.lastname = student['lastname']
-        db_student.birth_day = student['birth_day']
-        db_student.age = student['age']
-        db_student.sex = student['sex']
-        db.commit()
-        db.refresh(db_student)
+@router_v1.patch('/students/{student_id}')
+async def update_student(student_id: int, student: dict, db: Session = Depends(get_db)):
+    existing_student = db.query(models.Student).filter(models.Student.id == student_id).first()
+    if not existing_student:
         return {
-            'message': f'Student updated {student_id} susscessfully'
-        }
-    else:
-        response.status_code = 404
-        return {
-            'message': f'Student {student_id} not found'
-        }
+        'message': 'Student not found'
+    }
+
+    if 'firstname' in student:
+        existing_student.firstname = student['firstname']
+    if 'lastname' in student:
+        existing_student.lastname = student['lastname']
+    if 'std_id' in student:
+        existing_student.std_id = student['std_id']
+    if 'birth' in student:
+        existing_student.birth = student['birth']
+    if 'gender' in student:
+        existing_student.gender = student['gender']
+    
+    db.commit()
+    db.refresh(existing_student)
+    return existing_student
 
 @router_v1.delete('/students/{student_id}')
-async def delete_student(student_id: int, response: Response, db: Session = Depends(get_db)):
-    student = db.query(models.Student).filter(models.Student.student_id == student_id).first()
-    if student:
-        db.delete(student)
-        db.commit()
+async def delete_student(student_id: int, db: Session = Depends(get_db)):
+    existing_student = db.query(models.Student).filter(models.Student.id == student_id).first()
+    if not existing_student:
         return {
-            'message': f'Student deleted {student_id} susscessfully'
-        }
-    else:
-        response.status_code = 404
-        return {
-            'message': f'Student {student_id} not found'
-        }
-        
+        'message': 'Student not found'
+    }
+    
+    db.delete(existing_student)
+    db.commit()
+    return {"detail": "Student deleted successfully"}
+
 app.include_router(router_v1)
-
-
 
 if __name__ == '__main__':
     import uvicorn
