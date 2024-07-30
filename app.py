@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 # Import models
 from database import SessionLocal, engine
 import models
-from . import models
+import models
 models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
@@ -59,9 +59,7 @@ async def create_book(book: dict, response: Response, db: Session = Depends(get_
 #     pass
 @router_v1.get('/students')
 async def get_students(db: Session = Depends(get_db)):
-    # print(123)
-    return {"kelly": 65070224}
-    # return db.query(models.Student).all()
+    return db.query(models.Student).all()
 
 @router_v1.get('/students/{student_id}') # คือการสร้างเส้นทางที่ใช้สำหรับการดึงข้อมูลหนังสือ
 async def get_student(student_id: int, db: Session = Depends(get_db)):
