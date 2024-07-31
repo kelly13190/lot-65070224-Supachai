@@ -183,7 +183,7 @@ async def get_student(student_id: int, db: Session = Depends(get_db)):
 @router_v1.post('/students')
 async def create_student(student: dict, response: Response, db: Session = Depends(get_db)):
     # TODO: Add validation
-    newstudent = models.Student(firstname=student['firstname'], lastname=student['lastname'], std_id=student['std_id'], birth=student['birth'], gender=student['gender'])
+    newstudent = models.Student(firstname=student['firstname'], lastname=student['lastname'], age=student['age'], birth_day=student['birth_day'], sex=student['sex'])
     db.add(newstudent)
     db.commit()
     db.refresh(newstudent)
@@ -202,12 +202,12 @@ async def update_student(student_id: int, student: dict, db: Session = Depends(g
         existing_student.firstname = student['firstname']
     if 'lastname' in student:
         existing_student.lastname = student['lastname']
-    if 'std_id' in student:
-        existing_student.std_id = student['std_id']
-    if 'birth' in student:
-        existing_student.birth = student['birth']
-    if 'gender' in student:
-        existing_student.gender = student['gender']
+    if 'id' in student:
+        existing_student.id = student['id']
+    if 'birth_day' in student:
+        existing_student.birth_day = student['birth_day']
+    if 'sex' in student:
+        existing_student.sex = student['sex']
     
     db.commit()
     db.refresh(existing_student)
